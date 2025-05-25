@@ -26,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark"> {/* Ensure dark theme is applied if needed by components expecting .dark */}
+    <html lang="en" className="dark">
       <body className={`${montserrat.variable} ${inter.variable} antialiased`}>
         <AuthProvider>
           {children}
