@@ -1,7 +1,9 @@
 import {genkit} from 'genkit';
-import {googleAI} from '@genkit-ai/googleai';
+import {openAI} from '@genkit-ai/openai';
 
 export const ai = genkit({
-  plugins: [googleAI()],
-  model: 'googleai/gemini-2.0-flash',
+  plugins: [
+    openAI({apiKey: process.env.OPENAI_API_KEY}),
+  ],
+  // No global default model specified, flows should define their models.
 });

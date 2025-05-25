@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -39,6 +40,7 @@ export async function augmentSceneWithCustomPrompt(
 
 const augmentSceneWithCustomPromptPrompt = ai.definePrompt({
   name: 'augmentSceneWithCustomPromptPrompt',
+  model: 'openai/gpt-4o-mini', // Using an OpenAI text model
   input: {schema: AugmentSceneWithCustomPromptInputSchema},
   output: {schema: AugmentSceneWithCustomPromptOutputSchema},
   prompt: `You are an AI assistant that refines scene generation prompts based on user input.
@@ -51,7 +53,7 @@ const augmentSceneWithCustomPromptPrompt = ai.definePrompt({
         Atmospheric Effects: {{#each atmosphericEffects}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
         Custom Instructions: {{{customPrompt}}}
 
-        Compose a detailed prompt that leverages the above information to generate a realistic and visually compelling scene preview.`,
+        Compose a detailed prompt that leverages the above information to generate a realistic and visually compelling scene preview. This prompt will be used by an image generation AI (like DALL-E). Focus on descriptive language that translates well into visual elements.`,
 });
 
 const augmentSceneWithCustomPromptFlow = ai.defineFlow(

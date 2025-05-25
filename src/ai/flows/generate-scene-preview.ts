@@ -30,6 +30,8 @@ export async function generateScenePreview(input: GenerateScenePreviewInput): Pr
   return generateScenePreviewFlow(input);
 }
 
+// This prompt object is defined but not directly used by the flow below.
+// If it were used, it would also need an OpenAI model specified.
 const prompt = ai.definePrompt({
   name: 'generateScenePreviewPrompt',
   input: {schema: GenerateScenePreviewInputSchema},
@@ -53,13 +55,14 @@ const generateScenePreviewFlow = ai.defineFlow(
   },
   async input => {
     const {media} = await ai.generate({
-      // IMPORTANT: ONLY the googleai/gemini-2.0-flash-exp model is able to generate images. You MUST use exactly this model to generate images.
-      model: 'googleai/gemini-2.0-flash-exp',
-      prompt: `Location: ${input.location}, Date and Time: ${input.dateTime}, Weather Condition: ${input.weatherCondition}, Custom Prompt: ${input.customPrompt}, Voice Input Transcript: ${input.voiceInputTranscript}. Generate a photorealistic image based on the above parameters. The image should be highly detailed and visually appealing.`,      
-      config: {
-        responseModalities: ['TEXT', 'IMAGE'], // MUST provide both TEXT and IMAGE, IMAGE only won't work
-      },
+      model: 'openai/dall-e-3', // Using OpenAI DALL-E 3 model
+      prompt: `Photorealistic scene. Location: ${input.location}. Date and Time: ${input.dateTime}. Weather: ${input.weatherCondition}. ${input.customPrompt ? `Details: ${input.customPrompt}.` : ''} ${input.voiceInputTranscript ? `Voice instructions: ${input.voiceInputTranscript}.` : ''} Highly detailed and visually appealing.`,
+      // No specific config like responseModalities needed for DALL-E with Genkit typically
     });
+
+    if (!media || !media.url) {
+      throw new Error('Image generation failed or did not return a URL.');
+    }
 
     return {
       generatedPreviewUrl: media.url,
