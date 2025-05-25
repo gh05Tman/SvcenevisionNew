@@ -5,11 +5,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircleIcon, WifiOffIcon } from 'lucide-react';
+import { AlertCircleIcon } from 'lucide-react';
 
 const MAP_DEFAULT_CENTER = { lat: 48.8584, lng: 2.2945 }; // Eiffel Tower
 const MAP_DEFAULT_ZOOM = 15;
-const MAP_WORLD_ZOOM = 3;
 
 interface InteractiveMapProps {
   // In the future, we can add props for center, zoom, markers, onLocationSelect, etc.
@@ -22,38 +21,45 @@ export function InteractiveMap({}: InteractiveMapProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true; // Flag to check if component is still mounted
+
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
     if (!apiKey) {
       console.error('Google Maps API key is missing. Please set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY in your .env file.');
-      setErrorMessage('Map configuration error: API key is missing.');
-      setStatus('error');
+      if (isMounted) {
+        setErrorMessage('Map configuration error: API key is missing.');
+        setStatus('error');
+      }
       return;
     }
 
     const loader = new Loader({
       apiKey: apiKey,
       version: 'weekly',
-      libraries: ['places', 'marker'], // 'places' for future search, 'marker' for pins
+      libraries: ['places', 'marker'],
     });
 
     let mapInstance: google.maps.Map | null = null;
 
     loader.load()
       .then((google) => {
+        if (!isMounted) {
+          return; // Component was unmounted before loader finished
+        }
+
         if (mapRef.current) {
           mapInstance = new google.maps.Map(mapRef.current, {
             center: MAP_DEFAULT_CENTER,
             zoom: MAP_DEFAULT_ZOOM,
-            mapId: 'SCENEVISION_MAP_ID', // Optional: for cloud-based map styling
-            streetViewControl: false, // Disablepegman
-            mapTypeControl: false, // Disable map/satellite toggle for simplicity for now
-            fullscreenControl: false, // Disable fullscreen
+            mapId: 'SCENEVISION_MAP_ID',
+            streetViewControl: false,
+            mapTypeControl: false,
+            fullscreenControl: false,
           });
           setMap(mapInstance);
           setStatus('loaded');
 
-          // Example: Add a marker at the default center
            new google.maps.marker.AdvancedMarkerElement({
              map: mapInstance,
              position: MAP_DEFAULT_CENTER,
@@ -61,28 +67,33 @@ export function InteractiveMap({}: InteractiveMapProps) {
            });
 
         } else {
-            throw new Error('Map container div not found.');
+          // Instead of throwing an error, log it and set component state to error
+          console.error('InteractiveMap: mapRef.current is null when Google Maps API loaded. The map container div was not found.');
+          setErrorMessage('Map container div not found during initialization.');
+          setStatus('error');
         }
       })
       .catch((error) => {
-        console.error('Error loading Google Maps:', error);
-        if (error.message.includes('ApiNotActivatedMapError') || error.message.includes('InvalidKeyMapError')) {
-            setErrorMessage('Map loading failed. Please check your API key and ensure the Maps JavaScript API is enabled.');
-        } else if (error.message.includes('RefererNotAllowedMapError')) {
-            setErrorMessage('Map loading failed. The current URL is not authorized in your API key settings.');
-        } else {
-            setErrorMessage('Could not load map. Please check your internet connection and API key setup.');
+        if (!isMounted) {
+          return; // Component was unmounted during catch
         }
+        console.error('Error loading Google Maps:', error);
+        let specificMessage = 'Could not load map. Please check your internet connection and API key setup.';
+        if (error.message.includes('ApiNotActivatedMapError') || error.message.includes('InvalidKeyMapError')) {
+            specificMessage = 'Map loading failed. Please check your API key and ensure the Maps JavaScript API is enabled.';
+        } else if (error.message.includes('RefererNotAllowedMapError')) {
+            specificMessage = 'Map loading failed. The current URL is not authorized in your API key settings.';
+        }
+        setErrorMessage(specificMessage);
         setStatus('error');
       });
       
       return () => {
-        // Optional: Cleanup map instance if component unmounts, though usually not strictly necessary
-        // if (mapInstance) {
-        //   // unbind all listeners, remove all markers, etc.
-        // }
+        isMounted = false;
+        // Optional: Cleanup map instance if necessary, e.g. mapInstance?.unbindAll();
+        // For Google Maps, removing the DOM element is often sufficient for basic maps.
       };
-  }, []);
+  }, []); // Empty dependency array ensures this runs once on mount and cleans up on unmount
 
   if (status === 'loading') {
     return (
