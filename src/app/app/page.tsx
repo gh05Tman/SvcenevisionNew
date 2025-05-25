@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from 'react';
-import { MapPlaceholder } from '@/components/scene-planner/MapPlaceholder';
+import { InteractiveMap } from '@/components/scene-planner/InteractiveMap';
 import { SceneControls } from '@/components/scene-planner/SceneControls';
 import { ScenePreview } from '@/components/scene-planner/ScenePreview';
 import { FloatingActionButton } from '@/components/scene-planner/FloatingActionButton';
@@ -112,7 +112,7 @@ export default function ScenePlannerPage() {
 
         {/* Map and Preview Column */}
         <div className="lg:col-span-2 space-y-6 order-1 lg:order-2">
-          <MapPlaceholder />
+          <InteractiveMap />
           <Separator />
           <ScenePreview
             scene={generatedScene}
